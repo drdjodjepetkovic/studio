@@ -27,9 +27,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: List files in workspace # DODATO ZA DEBUG
-      run: ls -la ${{ github.workspace }}
-
     - name: Authenticate to Google Cloud
       uses: 'google-github-actions/auth@v2'
       with:
@@ -39,23 +36,23 @@ jobs:
       uses: 'google-github-actions/setup-gcloud@v2'
 
     - name: Configure Docker to use gcloud
+      # This step is still needed so that Docker is authenticated to your Artifact Registry
       run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev
 
-    - name: Build Docker image
-      working-directory: ${{ github.workspace }}
-      # Koristimo --file da eksplicitno navedemo Dockerfile
-      # i '.' kao build kontekst (trenutni radni direktorijum)
-      run: docker build --file Dockerfile -t ${{ env.IMAGE_NAME }} .
-
-    - name: Push Docker image to Artifact Registry
-      run: docker push ${{ env.IMAGE_NAME }}
+    - name: Build and push Docker image using docker/build-push-action
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ github.workspace }} # Specifies the build context (root of your repo)
+        file: ${{ github.workspace }}/Dockerfile # Specifies the path to your Dockerfile
+        push: true # Tells the action to push the image to the registry
+        tags: ${{ env.IMAGE_NAME }} # Sets the tags for the image
 
     - name: Deploy to Cloud Run
       uses: 'google-github-actions/deploy-cloudrun@v2'
       with:
         service: ${{ env.CLOUD_RUN_SERVICE_NAME }}
         region: ${{ env.CLOUD_RUN_REGION }}
-        image: ${{ env.IMAGE_NAME }}
+        image: ${{ env.IMAGE_NAME }} # Use the image that was just built and pushed
         env_vars: |
           API_KEY=${{ secrets.API_KEY }}
           PORT=8080
