@@ -8,7 +8,7 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_ARTIFACT_REGISTRY_LOCATION: ${{ secrets.GCP_ARTIFACT_REGISTRY_LOCATION }} # e.g., europe-west1
-  GCP_ARTIFACT_REPO_NAME: ${{ secrets.GCP_ARTIFACT_REPO_NAME }} # e.g., palmoticeva-app-repo
+  GCP_ARTIFACT_REPO_NAME: ${{ secrets.GCP_ARTIFACT_REPO_NAME }} # e.g., palmoticeva-repo
   CLOUD_RUN_SERVICE_NAME: ${{ secrets.CLOUD_RUN_SERVICE_NAME }} # e.g., palmoticeva-sanctuary
   CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }} # e.g., europe-west1
   # IMAGE_NAME format: location-docker.pkg.dev/project-id/repo-name/service-name:commit-sha
@@ -39,7 +39,9 @@ jobs:
       run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev
 
     - name: Build Docker image
-      run: docker build -f ${{ github.workspace }}/Dockerfile -t ${{ env.IMAGE_NAME }} ${{ github.workspace }} # <-- ISPRAVLJENA LINIJA
+      # Using --file to specify Dockerfile path relative to workspace,
+      # and workspace as the build context.
+      run: docker build --file ${{ github.workspace }}/Dockerfile -t ${{ env.IMAGE_NAME }} ${{ github.workspace }}
 
     - name: Push Docker image to Artifact Registry
       run: docker push ${{ env.IMAGE_NAME }}
