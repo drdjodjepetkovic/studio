@@ -1,0 +1,34 @@
+{
+  "name": "palmoticeva-digital-sanctuary",
+  "version": "1.0.0",
+  "description": "Frontend for Palmotićeva Digital Sanctuary",
+  "main": "dist/bundle.js",
+  "scripts": {
+    "dev": "esbuild index.tsx --bundle --servedir=. --outfile=bundle.js --loader:.js=jsx --platform=browser --format=esm --jsx-factory=React.createElement --jsx-fragment=React.Fragment --watch",
+    "build:js": "esbuild index.tsx --bundle --outfile=dist/bundle.js --loader:.js=jsx --platform=browser --format=esm --jsx-factory=React.createElement --jsx-fragment=React.Fragment --minify",
+    "build:copy-assets": "copyfiles index.html \"media/**/*\" metadata.json dist",
+    "build": "rimraf dist && npm run build:js && npm run build:copy-assets",
+    "start": "serve dist -p 8080 -s"
+  },
+  "keywords": [
+    "react",
+    "frontend",
+    "ginekologija"
+  ],
+  "author": "AI Studio User",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@google/genai": "^1.3.0",
+    "serve": "^14.2.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.4",
+    "rimraf": "^5.0.7",
+    "copyfiles": "^2.4.1"
+  }
+}
