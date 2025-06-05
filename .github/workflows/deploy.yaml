@@ -8,7 +8,7 @@ on:
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GCP_ARTIFACT_REGISTRY_LOCATION: ${{ secrets.GCP_ARTIFACT_REGISTRY_LOCATION }} # e.g., europe-west1
-  GCP_ARTIFACT_REPO_NAME: ${{ secrets.GCP_ARTIFACT_REPO_NAME }} # e.g., palmoticeva-repo (PROVERITE OVAJ SECRET!)
+  GCP_ARTIFACT_REPO_NAME: ${{ secrets.GCP_ARTIFACT_REPO_NAME }} # e.g., palmoticeva-repo
   CLOUD_RUN_SERVICE_NAME: ${{ secrets.CLOUD_RUN_SERVICE_NAME }} # e.g., palmoticeva-sanctuary
   CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }} # e.g., europe-west1
   # IMAGE_NAME format: location-docker.pkg.dev/project-id/repo-name/service-name:commit-sha
@@ -27,6 +27,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: List files in workspace # DODATO ZA DEBUG
+      run: ls -la ${{ github.workspace }}
+
     - name: Authenticate to Google Cloud
       uses: 'google-github-actions/auth@v2'
       with:
@@ -39,11 +42,10 @@ jobs:
       run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev
 
     - name: Build Docker image
-      # Explicitly set the working directory to the root of the checkout.
-      # Use '.' as the build context, which tells Docker to look for Dockerfile
-      # in the current working directory (which is now github.workspace).
       working-directory: ${{ github.workspace }}
-      run: docker build -t ${{ env.IMAGE_NAME }} .
+      # Koristimo --file da eksplicitno navedemo Dockerfile
+      # i '.' kao build kontekst (trenutni radni direktorijum)
+      run: docker build --file Dockerfile -t ${{ env.IMAGE_NAME }} .
 
     - name: Push Docker image to Artifact Registry
       run: docker push ${{ env.IMAGE_NAME }}
