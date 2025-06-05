@@ -54,7 +54,3 @@ jobs:
           API_KEY=${{ secrets.API_KEY }}
           PORT=8080
         flags: '--allow-unauthenticated'
-
-    - name: Output Cloud Run URL
-      if: success()
-      run: echo "Deployed to: $(gcloud run services describe ${{ env.CLOUD_RUN_SERVICE_NAME }} --platform managed --region ${{ env.CLOUD_RUN_REGION }} --format 'value(status.url)')"
