@@ -11,7 +11,6 @@ env:
   GCP_ARTIFACT_REPO_NAME: ${{ secrets.GCP_ARTIFACT_REPO_NAME }} # e.g., palmoticeva-repo
   CLOUD_RUN_SERVICE_NAME: ${{ secrets.CLOUD_RUN_SERVICE_NAME }} # e.g., palmoticeva-sanctuary
   CLOUD_RUN_REGION: ${{ secrets.CLOUD_RUN_REGION }} # e.g., europe-west1
-  # IMAGE_NAME format: location-docker.pkg.dev/project-id/repo-name/service-name:commit-sha
   IMAGE_NAME: ${{ secrets.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REPO_NAME }}/${{ secrets.CLOUD_RUN_SERVICE_NAME }}:${{ github.sha }}
 
 jobs:
@@ -21,7 +20,7 @@ jobs:
 
     permissions:
       contents: 'read'
-      id-token: 'write' # Required for Workload Identity Federation, good practice for SA keys too.
+      id-token: 'write'
 
     steps:
     - name: Checkout code
@@ -32,33 +31,30 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Set up Cloud SDK (for gcloud commands if needed later, not strictly for docker/build-push-action)
+    - name: Set up Cloud SDK
       uses: 'google-github-actions/setup-gcloud@v2'
 
-    - name: Configure Docker to use gcloud (for docker/build-push-action to authenticate to Artifact Registry)
+    - name: Configure Docker to use gcloud
       run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev
 
-    - name: Set up Docker Buildx (Recommended by docker/build-push-action)
+    - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: Build and push Docker image using docker/build-push-action
       uses: docker/build-push-action@v5
       with:
-        context: ${{ github.workspace }} # Build context is the root of your repository
-        file: ${{ github.workspace }}/Dockerfile # Explicit path to your Dockerfile
-        push: true # This will push the image to the registry configured in the previous step
-        tags: ${{ env.IMAGE_NAME }} # Tags for the image
-        # Optional: Add build arguments if your Dockerfile needs them
-        # build-args: |
-        #   SOME_ARG=value
+        context: ${{ github.workspace }}
+        file: ${{ github.workspace }}/Dockerfile
+        push: true
+        tags: ${{ env.IMAGE_NAME }}
 
     - name: Deploy to Cloud Run
       uses: 'google-github-actions/deploy-cloudrun@v2'
       with:
         service: ${{ env.CLOUD_RUN_SERVICE_NAME }}
         region: ${{ env.CLOUD_RUN_REGION }}
-        image: ${{ env.IMAGE_NAME }} # Use the image that was just built and pushed
+        image: ${{ env.IMAGE_NAME }}
         env_vars: |
-          API_KEY=${{ secrets.API_KEY }}
-          PORT=8080 # Ensure this matches the EXPOSE port in your Dockerfile and CMD in Dockerfile
+          API_KEY=${{ secrets.API_KEY }} # Samo API_KEY ostaje ovde
+        # PORT je uklonjen jer ga Cloud Run automatski postavlja
         flags: '--allow-unauthenticated'
