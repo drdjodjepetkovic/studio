@@ -39,7 +39,7 @@ jobs:
       run: gcloud auth configure-docker ${{ env.GCP_ARTIFACT_REGISTRY_LOCATION }}-docker.pkg.dev
 
     - name: Build Docker image
-      run: docker build -t ${{ env.IMAGE_NAME }} .
+      run: docker build -t ${{ env.IMAGE_NAME }} ${{ github.workspace }} # <-- ISPRAVLJENA LINIJA
 
     - name: Push Docker image to Artifact Registry
       run: docker push ${{ env.IMAGE_NAME }}
